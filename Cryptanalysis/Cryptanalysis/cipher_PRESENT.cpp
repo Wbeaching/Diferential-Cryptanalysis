@@ -302,15 +302,15 @@ void PRESENT::fprintPermTable(){
 }
 
 void PRESENT::fprintCurrentTrail(){
-	fprintf(fpTrails,"%d:\n",trailCount[round]+1);
+	fprintf(fpTrails,"%d:\n",trailCount[round-1]+1);
 	for(int r=0;r<round;r++){
 		for(int si=0;si<sboxNum;si++){
-			fprintf(fpTrails,"%01x ",roundCharacter[r][si]);
+			fprintf(fpTrails,"%01x ",roundCharacteristic[r][si]);
 		}fprintf(fpTrails,"\t");
 		fprintf(fpTrails,"\t%d",roundProb[r]);
 		fprintf(fpTrails,"\n");
 	}
-	trailCount[round]++;
+	trailCount[round-1]++;
 }
 
 void PRESENT::foundOne(){
@@ -334,17 +334,17 @@ void PRESENT::getInfo(int r,__m128i tmp){
 	_mm_storeu_si128((__m128i *)(roundActiveSboxIndex[r]),c);
 }
 
-void PRESENT::Round__(int r,int j,prType pr_round,__m128i tmp0){
+void PRESENT::searchRound(int r,int j,prType pr_round,__m128i tmp0){
 	si8 an=roundActiveSboxNum[r-1];
 	si8 ai=roundActiveSboxIndex[r-1][j];
 	si8 an_remain=an-j-1;
 	prType prob;
 	si8 s;
 	si8 m;
-	u16 idv=roundCharacter[r-1][ai];
+	u16 idv=roundCharacteristic[r-1][ai];
 	__m128i tmp1;
 	__m128i *odp;
-	odp=(__m128i *)(roundCharacter[r]);
+	odp=(__m128i *)(roundCharacteristic[r]);
 
 	for(si16 pr=0;pr<diffProbNum;pr++){//遍历概率
 		prob=diffProb[pr]+pr_round;
@@ -356,27 +356,27 @@ void PRESENT::Round__(int r,int j,prType pr_round,__m128i tmp0){
 				if(an_remain==0){
 					roundProb[r-1]=roundProb[r-2]+prob;
 					_mm_store_si128(odp,tmp1);
-					Round_(r+1);
+					searchRound(r+1);
 				}else{
-					Round__(r,j+1,prob,tmp1);
+					searchRound(r,j+1,prob,tmp1);
 				}
 			}
 		}else break;
 	}
 }
 
-void PRESENT::Round_N_(int j,prType pr_round,__m128i tmp0){
+void PRESENT::searchRoundN(int j,prType pr_round,__m128i tmp0){
 	si8 an=roundActiveSboxNum[round-1];
 	si8 ai=roundActiveSboxIndex[round-1][j];
 	si8 an_remain=an-j-1;
 	prType prob;
-	u16 idv=roundCharacter[round-1][ai];
+	u16 idv=roundCharacteristic[round-1][ai];
 	
 	si8 s;
 	si8 m;
 	__m128i tmp1;
 	__m128i *odp;
-	odp=(__m128i *)(roundCharacter[round]);
+	odp=(__m128i *)(roundCharacteristic[round]);
 
 	si8 pr=diffInputMaxProb[idv];
 	prob=diffProb[pr]+pr_round;
@@ -390,83 +390,93 @@ void PRESENT::Round_N_(int j,prType pr_round,__m128i tmp0){
 				_mm_store_si128(odp,tmp1);
 				foundOne();
 			}else{
-				Round_N_(j+1,prob,tmp1);
+				searchRoundN(j+1,prob,tmp1);
 			}
 		}
 	}
 }
 
-void PRESENT::Round_(int r){
+void PRESENT::searchRound(int r){
 	__m128i tmp1;
 	tmp1=_mm_setzero_si128();
 	__m128i *idp;
-	idp=(__m128i *)(roundCharacter[r-1]);
+	idp=(__m128i *)(roundCharacteristic[r-1]);
 	getInfo(r-1,*idp);
-
-	//if((roundProb[r-2]+Bn[round-r-1]+diffWminSbox*roundActiveSboxNum[r-1])<(Bnc[round-1]+1e-10)){}
+	/*FILE* fq;
+	fq=fopen("test.txt","a+");
+	fprintf(fq,"%d %d %d\n",round,r,Bn[round-r-1]);
+	fclose(fq);*/
+	//if((roundProb[r-2]+Bn[round-r-1]+diffWminSbox*roundActiveSboxNum[r-1])<=(Bnc[round-1])){}
 	//else return;
 	
 	if(r==round){
-		Round_N_(0,0,tmp1);//1是起始活跃S盒，0是起始概率
+		if((roundProb[r-2]+diffWminSbox*roundActiveSboxNum[r-1])<=(Bnc[round-1])){}
+		else return;
+		searchRoundN(0,0,tmp1);//1是起始活跃S盒，0是起始概率
 	}else{
-		Round__(r,0,0,tmp1);//r是轮数，0是起始活跃S盒，0是起始概率，tmp1是起始输出差分
+		if((roundProb[r-2]+Bn[round-r-1]+diffWminSbox*roundActiveSboxNum[r-1])<=(Bnc[round-1])){}
+		else return;
+		searchRound(r,0,0,tmp1);//r是轮数，0是起始活跃S盒，0是起始概率，tmp1是起始输出差分
 	}
 }
 
-void PRESENT::Round_1_(int j,int a_pre,prType pr_round,__m128i tmp0){
+void PRESENT::searchRound1(int j,int a_pre,prType pr_round,__m128i tmp0){
 	prType prob;
 	int a_cur;
 	si16 dy;
 	__m128i tmp1;
 	__m128i *odp;
-	odp=(__m128i *)(roundCharacter[1]);
+	odp=(__m128i *)(roundCharacteristic[1]);
 
 	for(a_cur=a_pre+1;a_cur<sboxNum;a_cur++){
-		memset(roundCharacter[0]+a_pre+1,0,sizeof(u8)*(a_cur-a_pre-1));
+		memset(roundCharacteristic[0]+a_pre+1,0,sizeof(u8)*(a_cur-a_pre-1));
 		for(si16 o=1;o<outNum;o++){
 			prob=diffProb[diffOutputMaxProb[o]]+pr_round;
 			if((prob+Bn[round-2])<=(Bnc[round-1])){
-				roundCharacter[0][a_cur]=o;
+				roundCharacteristic[0][a_cur]=o;
 				roundProb[0]=prob;
-				memset(roundCharacter[0]+a_cur+1,0,sizeof(u8)*(sboxNum-1-a_cur));
+				memset(roundCharacteristic[0]+a_cur+1,0,sizeof(u8)*(sboxNum-1-a_cur));
 				tmp1=_mm_xor_si128(tmp0,*(__m128i *)(permTable[a_cur][o]));
 				_mm_store_si128(odp,tmp1);
-				Round_(2);
-				Round_1_(j+1,a_cur,prob,tmp1);
+				searchRound(2);
+				searchRound1(j+1,a_cur,prob,tmp1);
 			}else break;
 		}
 	}
 }
 
-void PRESENT::Round_1(){
-	fpName=std::to_string((_ULonglong)(round)) +"-round_trails.txt";
+void PRESENT::searchRound1(){
+	fpName=to_string((_ULonglong)(round)) +"-round_trails.txt";
 	errno_t err;
 	err = fopen_s(&fpTrails, fpName.c_str(), "w" );
 
-	/*__m128i *idp;
-	__m128i tmp;
-	tmp=_mm_setzero_si128();
-	idp=(__m128i *)(roundCharacter[0]);
-	_mm_store_si128(idp,tmp);*/
 	__m128i tmp;
 	tmp=_mm_setzero_si128();
 	roundProb[0]=0;
-	Round_1_(1,-1,0,tmp);
+	searchRound1(1,-1,0,tmp);
 
 	fclose(fpTrails);
 }
 
 void PRESENT::searchForBestDiffTrails(){
 	Bn[0]=diffWminSbox;
-	for(round=2;round<=rounds;round++){
-		for(int step=diffWminSbox;;step++){
-			Bnc[round-1]=(int)Bn[round-2]+step;
+	Bn[1]=2*diffWminSbox;
+	for(round=3;round<=rounds;round++){
+		prType BnLowerBound=Bn[0]+Bn[round-2];
+		for(int i=1;i<round/2;i++){
+			prType tmp=Bn[i]+Bn[round-2-i];
+			if(tmp>BnLowerBound){
+				BnLowerBound=tmp;
+			}
+		}
+		for(prType step=BnLowerBound;;step++){
+			Bnc[round-1]=step;
 			clock_t start,end;
 			start=clock();
-			Round_1();
+			searchRound1();
 			end=clock();
 			printf("round:%d Bnc:%d time:%f\n",round,Bnc[round-1],(double)(end-start)/CLK_TCK);
-			if(trailCount[round]!=0){
+			if(trailCount[round-1]!=0){
 				Bn[round-1]=Bnc[round-1];
 				break;
 			}

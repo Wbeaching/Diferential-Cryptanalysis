@@ -11,8 +11,9 @@
 #include <smmintrin.h>
 #include <nmmintrin.h>
 #include <immintrin.h>
+#include <vector>
 //#include <math.h>
-//using namespace std;
+using namespace std;
 typedef unsigned char byte;
 typedef unsigned int word;
 
@@ -23,7 +24,7 @@ typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned long long u64;
-typedef u16 prType;
+typedef int prType;
 
 typedef char si8;
 typedef short si16;
