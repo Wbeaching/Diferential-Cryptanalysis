@@ -37,6 +37,7 @@ void PRESENT::genDiffTable(){
 			diffTable[d][sbox[i]^sbox[i^d]]++;
 		}
 	}
+	//GENDIFFTABLE(sbox,diffTable,inNum,outNum);
 }
 
 void PRESENT::genLinearTable(){
@@ -51,7 +52,6 @@ void PRESENT::genLinearTable(){
 			}
 		}
 	}
-
 	for(byte il=0x0; il<inNum; il++){
 		for(byte ol=0x0; ol<outNum; ol++){
 			int temp=linearTable[il][ol];
@@ -60,6 +60,7 @@ void PRESENT::genLinearTable(){
 			linearTable[il][ol] = (temp>mid)?(temp-mid):(mid-temp);
 		}
 	}
+	//GENLINEARTABLE(sbox,linearTable,inNum,outNum);
 }
 
 void PRESENT::genISbox(){
@@ -124,7 +125,9 @@ void PRESENT::genPermTable(){
 		for(int ii=0;ii<inNum;ii++){
 			Pid[si]=ii;
 			P(Pod,Pid);
+			iP(Pod,Pid);
 			memcpy(permTable[si][ii],Pod,sboxNum);
+			memcpy(ipermTable[si][ii],Pod,sboxNum);
 		}
 	}
 }
@@ -211,6 +214,7 @@ void PRESENT::genSPTable(){
 				for(int si=0;si<sboxNum;si++){
 					memcpy(SPTable[si][Wto[i]][diff_0_Count[diffProbNum-diffTable[Wto[i]][Wto[o]]/2]],permTable[si][Wto[o]],sboxNum*sizeof(byte));
 				}
+				//ISTable[Wto[i]][inNum/2]
 				diff_1_Count[diffProbNum-diffTable[Wto[i]][Wto[o]]/2]++;
 				diff_0_Count[diffProbNum-diffTable[Wto[i]][Wto[o]]/2]++;
 			}
@@ -310,12 +314,12 @@ void PRESENT::fprintCurrentTrail(){
 		fprintf(fpTrails,"\t%d",roundProb[r]);
 		fprintf(fpTrails,"\n");
 	}
-	trailCount[round-1]++;
 }
 
 void PRESENT::foundOne(){
 	Bnc[round-1]=roundProb[round-1];
 	fprintCurrentTrail();
+	trailCount[round-1]++;
 }
 
 void PRESENT::getInfo(int r,__m128i tmp){
@@ -483,3 +487,40 @@ void PRESENT::searchForBestDiffTrails(){
 		}
 	}
 }
+
+/*void PRESENT::traverseRound1(){
+	__m128i tmp1;
+	tmp1=_mm_setzero_si128();
+	__m128i *odp;
+	odp=(__m128i *)(roundCharacteristic[0]);
+	getInfo(0,*odp);
+	traverseRound1(1,tmp1);
+}
+
+void PRESENT::traverseRound1(int j,__m128i tmp0){
+	si8 an=roundActiveSboxNum[round-1];
+	si8 ai=roundActiveSboxIndex[round-1][j];
+	si8 an_remain=an-j-1;
+	prType prob;
+	u16 idv=roundCharacteristic[round-1][ai];
+	
+	si8 s;
+	si8 m;
+	__m128i tmp1;
+	__m128i *odp;
+	odp=(__m128i *)(roundCharacteristic[0]);
+
+	si8 pr=diffInputMaxProb[idv];
+	s=diff_0_Offset[idv][pr][0];
+	m=diff_0_Number[idv][pr];
+	for(si16 k=s;k<s+m;k++){//±éÀúÊä³ö²î·Ö
+		roundCharacteristic1[ai]=
+		tmp1=_mm_xor_si128(tmp0,*(__m128i *)(SPTable[ai][idv][k]));
+		if(an_remain==0){
+			_mm_store_si128(odp,tmp1);
+			foundOne();
+		}else{
+			traverseRound1(j+1 ,tmp1);
+		}
+	}
+}*/

@@ -34,6 +34,7 @@ private:
 	void P(byte *Pod,byte *Pid);
 	void iP(byte *Pod,byte *Pid);
 	ALIGNED_TYPE_(byte,16) permTable[sboxNum][inNum][sboxNum];
+	ALIGNED_TYPE_(byte,16) ipermTable[sboxNum][inNum][sboxNum];
 	void genPermTable();
 	//关于S盒概率
 	static const int diffProbNum=2;
@@ -52,6 +53,9 @@ private:
 	byte diff_1_Non0Val[diffProbNum][outNum];
 	byte Wto[16];
 	ALIGNED_TYPE_(byte,16) SPTable[sboxNum][inNum][inNum/2][sboxNum];
+	//ALIGNED_TYPE_(byte,16) iSiPTable[sboxNum][inNum][inNum/2][sboxNum];
+	//byte STable[inNum][inNum/2];
+	//byte iSTable[inNum][inNum/2];
 	void genStatistics();
 	void genSPTable();
 	//搜索路径过程中的变量
@@ -60,6 +64,7 @@ private:
 	prType Bnc[rounds];
 	prType Bn[rounds];
 	ALIGNED_TYPE_(u8,16) roundCharacteristic[rounds+1][sboxNum];//第一轮存第一轮的输出差分。
+	ALIGNED_TYPE_(u8,16) roundCharacteristic1[sboxNum];
 	si8 roundActiveSboxNum[rounds+1];
 	si8 roundActiveSboxIndex[rounds+1][sboxNum];
 	prType roundProb[rounds+1];
@@ -75,4 +80,6 @@ private:
 	void searchRound(int r);
 	void searchRound1(int j,int a_pre,prType pr_round,__m128i tmp0);
 	void searchRound1();
+	void traverseRound1();
+	void traverseRound1(int j,__m128i tmp0);
 };
