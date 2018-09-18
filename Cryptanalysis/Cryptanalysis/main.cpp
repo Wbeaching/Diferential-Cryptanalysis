@@ -10,9 +10,9 @@ int xorsum(byte x){
 
 int main(){
 	PRESENT present;
-	present.printSbox();
-	present.printSboxDiffTable();
-	present.printSboxLinearTable();
+	//present.printSbox();
+	//present.printSboxDiffTable();
+	//present.printSboxLinearTable();
 	present.fprintPermTable();
 	present.fprintStatistics();
 	present.fprintSPTable();
