@@ -165,3 +165,106 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 		}\
 	}\
 }
+
+#define FPRINTSTATISTICS(SDiff_Number,SDiff_0_Number,SDiff_0_Offset,SDiff_1_Number,SDiff_1_Offset,SDiff_1_Non0Num,SDiff_1_Non0Val,diffProbNum,diffProb,SDiffInputMaxProb,ISDiffInputMaxProb)\
+{\
+	fp=fopen("statistics.txt","w");\
+	fprintf(fp,"diff_0_Offset:\n");\
+	for(int i=0x0;i<inNum;i++){\
+		fprintf(fp,"*/0x%02x*/",i);\
+		for(int p=0x0;p<diffProbNum;p++){\
+			fprintf(fp,"%d:%d-(%d,%d)\t",p,SDiff_0_Number[i][p],SDiff_0_Offset[i][p][0],SDiff_0_Offset[i][p][1]);\
+		}\
+		fprintf(fp,"\n");\
+	}\
+	fprintf(fp,"diff_1_Offset:\n");\
+	for(int p=0x0;p<diffProbNum;p++){\
+		fprintf(fp,"%d:%d-(%d,%d)\t",p,SDiff_1_Number[p],SDiff_1_Offset[p][0],SDiff_1_Offset[p][1]);\
+	}\
+	fprintf(fp,"\n");\
+	fprintf(fp,"diff_1_Non0:\n");\
+	for(int p=0;p<diffProbNum;p++){\
+		fprintf(fp,"%d:%d\n",p,SDiff_1_Non0Num[p]);\
+		for(int i=0;i<SDiff_1_Non0Num[p];i++){\
+			fprintf(fp,"%02x\t",SDiff_1_Non0Val[p][i]);\
+		}\
+		fprintf(fp,"\n");\
+	}\
+	fprintf(fp,"diffProb:\n");\
+	for(int p=0;p<diffProbNum;p++){\
+		fprintf(fp,"%d\t",diffProb[p]);\
+	}\
+	fprintf(fp,"\n");\
+	fprintf(fp,"diffInputMaxProb:\n");\
+	for(int i=0;i<inNum;i++){\
+		fprintf(fp,"%d\t",SDiffInputMaxProb[i]);\
+	}\
+	fprintf(fp,"\n");\
+	fprintf(fp,"diffOutputMaxProb:\n");\
+	for(int o=0;o<outNum;o++){\
+		fprintf(fp,"%d\t",ISDiffInputMaxProb[o]);\
+	}\
+	fprintf(fp,"\n");\
+	fclose(fp);\
+}
+
+#define FPRINTSPTABLE(diffSPTable,diffProbNum,SDiff_0_Offset)\
+{\
+	fp=fopen("SPTable.txt","w");\
+	for(int si=0;si<sboxNum;si++){\
+		fprintf(fp,"以下是第%d个S盒的SP表\n",si);\
+		for(int i=0x0;i<outNum;i++){\
+			fprintf(fp,"*/0x%02x*/\t",i);\
+			for(int p=0x0;p<diffProbNum;p++){\
+				fprintf(fp,"%d:\t",p);\
+				for(int k=SDiff_0_Offset[i][p][0];k<SDiff_0_Offset[i][p][1];k++){\
+					fprintf(fp,"(");\
+					for(int l=0;l<16;l++){\
+						fprintf(fp,"%02x,",diffSPTable[si][i][k][l]);\
+					}\
+					fprintf(fp,")\t");\
+				}\
+			}\
+			fprintf(fp,"\n");\
+		}\
+	}\
+	fclose(fp);\
+}
+
+#define FPRINTPTABLE(PTable)\
+{\
+	fp=fopen("PTable.txt","w");\
+	for(int s=0;s<sboxNum;s++){\
+		for(int id=0;id<inNum;id++){\
+			fprintf(fp,"/*0x%02x*/{",id);\
+			for(int i=0;i<sboxNum;i++){\
+				fprintf(fp,"0x%02x,",PTable[s][id][i]);\
+			}\
+			fprintf(fp,"},\n");\
+		}\
+		fprintf(fp,"},\n以上是第%d个S盒\n",s);\
+	}\
+	fclose(fp);\
+}
+
+#define FPRINTCURRENTTRAIL()\
+{\
+	fprintf(fpTrails,"%d:\n",trailCount[round-1]);\
+	for(int si=0;si<sboxNum;si++){\
+		fprintf(fpTrails,"%01x ",roundCharacteristic1[si]);\
+	}fprintf(fpTrails,"\t");\
+	fprintf(fpTrails,"%d",roundProb[0]);\
+	fprintf(fpTrails,"\n");\
+	for(int r=1;r<round;r++){\
+		for(int si=0;si<sboxNum;si++){\
+			fprintf(fpTrails,"%01x ",roundCharacteristic[r][si]);\
+		}fprintf(fpTrails,"\t");\
+		fprintf(fpTrails,"%d",roundProb[r]-roundProb[r-1]);\
+		fprintf(fpTrails,"\n");\
+	}\
+	for(int si=0;si<sboxNum;si++){\
+		fprintf(fpTrails,"%01x ",roundCharacteristic[round][si]);\
+	}fprintf(fpTrails,"\t");\
+	fprintf(fpTrails,"total:%d",roundProb[round-1]);\
+	fprintf(fpTrails,"\n");\
+}

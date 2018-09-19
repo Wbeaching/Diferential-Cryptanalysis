@@ -49,6 +49,13 @@ PRESENT::PRESENT(){
 	GENSPTABLE(diffISIPTable,ISDiffTable,IPTable,inNum,ISDiff_0_Offset,ISDiff_1_Offset,diffProbNum);
 	GENSPTABLE(linearSPTable,SLinearTable,PTable,inNum/2,SLinear_0_Offset,SLinear_1_Offset,linearProbNum);
 	GENSPTABLE(linearISIPTable,ISLinearTable,IPTable,inNum/2,SLinear_0_Offset,SLinear_1_Offset,linearProbNum);
+
+	/*for(int i=0;i<round+1;i++){
+		dp[i]=(__m128i *)(roundCharacteristic[i]);
+	}
+	__m128i tmp;
+	tmp=_mm_setzero_si128();
+	_mm_store_si128(dp[1],tmp);*/
 }
 
 void PRESENT::P(byte *Pod,byte *Pid){
@@ -60,103 +67,29 @@ void PRESENT::iP(byte *Pod,byte *Pid){
 }
 
 void PRESENT::fprintStatistics(){
-	FILE* fp;
-	fp=fopen("statistics.txt","w");
-	fprintf(fp,"diff_0_Offset:\n");
-	for(int i=0x0;i<inNum;i++){
-		fprintf(fp,"*/0x%02x*/",i);
-		for(int p=0x0;p<diffProbNum;p++){
-			fprintf(fp,"%d:%d-(%d,%d)\t",p,SDiff_0_Number[i][p],SDiff_0_Offset[i][p][0],SDiff_0_Offset[i][p][1]);
-		}
-		fprintf(fp,"\n");
-	}
-	fprintf(fp,"diff_1_Offset:\n");
-	for(int p=0x0;p<diffProbNum;p++){
-		fprintf(fp,"%d:%d-(%d,%d)\t",p,SDiff_1_Number[p],SDiff_1_Offset[p][0],SDiff_1_Offset[p][1]);
-	}
-	fprintf(fp,"\n");
-
-	fprintf(fp,"diff_1_Non0:\n");
-	for(int p=0;p<diffProbNum;p++){
-		fprintf(fp,"%d:%d\n",p,SDiff_1_Non0Num[p]);
-		for(int i=0;i<SDiff_1_Non0Num[p];i++){
-			fprintf(fp,"%02x\t",SDiff_1_Non0Val[p][i]);
-		}
-		fprintf(fp,"\n");
-	}
-
-	fprintf(fp,"diffProb:\n");
-	for(int p=0;p<diffProbNum;p++){
-		fprintf(fp,"%d\t",diffProb[p]);
-	}
-	fprintf(fp,"\n");
-	fprintf(fp,"diffInputMaxProb:\n");
-	for(int i=0;i<inNum;i++){
-		fprintf(fp,"%d\t",SDiffInputMaxProb[i]);
-	}
-	fprintf(fp,"\n");
-	fprintf(fp,"diffOutputMaxProb:\n");
-	for(int o=0;o<outNum;o++){
-		fprintf(fp,"%d\t",ISDiffInputMaxProb[o]);
-	}
-	fprintf(fp,"\n");
-	fclose(fp);
+	FPRINTSTATISTICS(SDiff_Number,SDiff_0_Number,SDiff_0_Offset,SDiff_1_Number,SDiff_1_Offset,SDiff_1_Non0Num,SDiff_1_Non0Val,diffProbNum,diffProb,SDiffInputMaxProb,ISDiffInputMaxProb);
 }
 
 void PRESENT::fprintSPTable(){
-	FILE* fp;
-	fp=fopen("SPTable.txt","w");
-	for(int si=0;si<sboxNum;si++){
-		fprintf(fp,"以下是第%d个S盒的SP表\n",si);
-		for(int i=0x0;i<outNum;i++){
-			fprintf(fp,"*/0x%02x*/\t",i);
-			for(int p=0x0;p<diffProbNum;p++){
-				fprintf(fp,"%d:\t",p);
-				for(int k=SDiff_0_Offset[i][p][0];k<SDiff_0_Offset[i][p][1];k++){
-					fprintf(fp,"(");
-					for(int l=0;l<16;l++){
-						fprintf(fp,"%02x,",diffSPTable[si][i][k][l]);
-					}
-					fprintf(fp,")\t");
-				}
-			}
-			fprintf(fp,"\n");
-		}
-	}
-	fclose(fp);
+	FPRINTSPTABLE(diffSPTable,diffProbNum,SDiff_0_Offset)
 }
 
 void PRESENT::fprintPermTable(){
-	FILE* fp;
-	fp=fopen("perm.txt","w");
-	for(int s=0;s<sboxNum;s++){
-		for(int id=0;id<inNum;id++){
-			fprintf(fp,"/*0x%02x*/{",id);
-			for(int i=0;i<sboxNum;i++){
-				fprintf(fp,"0x%02x,",PTable[s][id][i]);
-			}
-			fprintf(fp,"},\n");
-		}
-		fprintf(fp,"},\n以上是第%d个S盒\n",s);
-	}
-	fclose(fp);
+	FPRINTPTABLE(PTable);
 }
 
 void PRESENT::fprintCurrentTrail(){
-	fprintf(fpTrails,"%d:\n",trailCount[round-1]+1);
-	for(int r=0;r<round;r++){
-		for(int si=0;si<sboxNum;si++){
-			fprintf(fpTrails,"%01x ",roundCharacteristic[r][si]);
-		}fprintf(fpTrails,"\t");
-		fprintf(fpTrails,"\t%d",roundProb[r]);
-		fprintf(fpTrails,"\n");
-	}
+	FPRINTCURRENTTRAIL();
 }
 
 void PRESENT::foundOne(){
-	Bnc[round-1]=roundProb[round-1];
+	if(Bnc[round-1]==roundProb[round-1]){
+		trailCount[round-1]++;
+	}else{
+		Bnc[round-1]=roundProb[round-1];
+		trailCount[round-1]=1;
+	}
 	fprintCurrentTrail();
-	trailCount[round-1]++;
 }
 
 void PRESENT::getInfo(int r,__m128i tmp){
@@ -229,7 +162,8 @@ void PRESENT::searchRoundN(int j,prType pr_round,__m128i tmp0){
 			if(an_remain==0){
 				roundProb[round-1]=roundProb[round-2]+prob;
 				_mm_store_si128(odp,tmp1);
-				foundOne();
+				//foundOne();
+				traverseRound1();
 			}else{
 				searchRoundN(j+1,prob,tmp1);
 			}
@@ -243,12 +177,6 @@ void PRESENT::searchRound(int r){
 	__m128i *idp;
 	idp=(__m128i *)(roundCharacteristic[r-1]);
 	getInfo(r-1,*idp);
-	/*FILE* fq;
-	fq=fopen("test.txt","a+");
-	fprintf(fq,"%d %d %d\n",round,r,Bn[round-r-1]);
-	fclose(fq);*/
-	//if((roundProb[r-2]+Bn[round-r-1]+diffWminSbox*roundActiveSboxNum[r-1])<=(Bnc[round-1])){}
-	//else return;
 	
 	if(r==round){
 		if((roundProb[r-2]+diffWminSbox*roundActiveSboxNum[r-1])<=(Bnc[round-1])){}
@@ -316,8 +244,9 @@ void PRESENT::searchForBestDiffTrails(){
 			start=clock();
 			searchRound1();
 			end=clock();
-			printf("round:%d Bnc:%d time:%f\n",round,Bnc[round-1],(double)(end-start)/CLK_TCK);
+			
 			if(trailCount[round-1]!=0){
+				printf("round:%d Bnc:%d time:%f count:%d\n",round,Bnc[round-1],(double)(end-start)/CLK_TCK,trailCount[round-1]);
 				Bn[round-1]=Bnc[round-1];
 				break;
 			}
@@ -325,39 +254,41 @@ void PRESENT::searchForBestDiffTrails(){
 	}
 }
 
-/*void PRESENT::traverseRound1(){
+void PRESENT::traverseRound1(){
 	__m128i tmp1;
 	tmp1=_mm_setzero_si128();
+
 	__m128i *odp;
 	odp=(__m128i *)(roundCharacteristic[0]);
 	getInfo(0,*odp);
-	traverseRound1(1,tmp1);
+
+	__m128i *idp;
+	idp=(__m128i *)(roundCharacteristic1);
+	_mm_store_si128(idp,tmp1);
+
+	traverseRound1(0);
 }
 
-void PRESENT::traverseRound1(int j,__m128i tmp0){
-	si8 an=roundActiveSboxNum[round-1];
-	si8 ai=roundActiveSboxIndex[round-1][j];
+void PRESENT::traverseRound1(int j){
+	si8 an=roundActiveSboxNum[0];
+	si8 ai=roundActiveSboxIndex[0][j];
 	si8 an_remain=an-j-1;
 	prType prob;
-	u16 idv=roundCharacteristic[round-1][ai];
-	
-	si8 s;
-	si8 m;
-	__m128i tmp1;
-	__m128i *odp;
-	odp=(__m128i *)(roundCharacteristic[0]);
+	u16 idv=roundCharacteristic[0][ai];
 
-	si8 pr=diffInputMaxProb[idv];
-	s=diff_0_Offset[idv][pr][0];
-	m=diff_0_Number[idv][pr];
-	for(si16 k=s;k<s+m;k++){//遍历输出差分
-		roundCharacteristic1[ai]=
-		tmp1=_mm_xor_si128(tmp0,*(__m128i *)(SPTable[ai][idv][k]));
-		if(an_remain==0){
-			_mm_store_si128(odp,tmp1);
-			foundOne();
-		}else{
-			traverseRound1(j+1 ,tmp1);
+	si8 pr=ISDiffInputMaxProb[idv];
+	for(int i=1;i<inNum;i++){
+		if(SDiffTable[i][idv]==(1<<(4-diffProb[pr]))){
+			roundCharacteristic1[ai]=i;
+			if(an_remain==0){
+				foundOne();
+			}else{
+				traverseRound1(j+1);
+			}
 		}
 	}
-}*/
+}
+
+void PRESENT::searchClusteringEffect(byte plaintext[sboxNum],byte ciphertext[sboxNum],prType bound){
+
+}

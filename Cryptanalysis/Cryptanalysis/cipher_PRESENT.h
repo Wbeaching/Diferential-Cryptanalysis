@@ -94,13 +94,14 @@ private:
 	prType Bnc[rounds];
 	prType Bn[rounds];
 	ALIGNED_TYPE_(u8,16) roundCharacteristic[rounds+1][sboxNum];//第一轮存第一轮的输出差分。
+	__m128i *dp[rounds+1];
 	ALIGNED_TYPE_(u8,16) roundCharacteristic1[sboxNum];
 	si8 roundActiveSboxNum[rounds+1];
 	si8 roundActiveSboxIndex[rounds+1][sboxNum];
 	prType roundProb[rounds+1];
 	int trailCount[rounds];
 	FILE *fpTrails;
-	//FILE *fp;
+	FILE *fp;
 	string fpName;
 	//搜索路径过程中的函数
 	void fprintCurrentTrail();
@@ -112,5 +113,7 @@ private:
 	void searchRound1(int j,int a_pre,prType pr_round,__m128i tmp0);
 	void searchRound1();
 	void traverseRound1();
-	void traverseRound1(int j,__m128i tmp0);
+	void traverseRound1(int j);
+
+	void PRESENT::searchClusteringEffect(byte plaintext[sboxNum],byte ciphertext[sboxNum],prType bound);
 };
