@@ -44,15 +44,11 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 	}\
 }
 
-#define PRINTSBOX(sbox,isbox,inNum)\
+#define PRINTSBOX(sbox,inNum)\
 {\
 	printf("SºÐ:\n");\
 	for(int i=0;i<inNum;i++){\
 		printf("%02x ",sbox[i]);\
-	}printf("\n");\
-	printf("SºÐµÄÄæ:\n");\
-	for(int i=0;i<inNum;i++){\
-		printf("%02x ",isbox[i]);\
 	}printf("\n");\
 }
 
@@ -65,28 +61,27 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 	}printf("\n");\
 }
 
-#define P_BITPERM(permTable)\
+#define P_BITPERM(permTable,uType,blockBits,PInBits,POutBits)\
 {\
-	memset(Pod,0,sboxNum);\
+	memset(Pod,0,sizeof(uType)*sboxNum);\
 	int n;\
 	for(int m=0;m<blockBits;m++){\
 		n=permTable[m];\
-		Pod[n/inBits]|=( ((Pid[m/inBits]>>(inBits-1-m%inBits))&0x1) << (inBits-1-n%inBits) );\
+		/*Pod[n/POutBits]|=( ((Pid[m/PInBits]>>(PInBits-1-m%PInBits))&0x1) << (POutBits-1-n%POutBits) );*/\
+		Pod[m/POutBits]|=( ((Pid[n/PInBits]>>(PInBits-1-n%PInBits))&0x1) << (POutBits-1-m%POutBits) );\
 	}\
 }
 
-#define GENPTABLE(Num,sboxNum)\
+#define GENPTABLE(Num,sboxNum,uType,P,PTable,inNum)\
 {\
-	ALIGNED_TYPE_(byte,Num) Pid[sboxNum],Pod[sboxNum];\
+	ALIGNED_TYPE_(uType,Num) Pid[sboxNum],Pod[sboxNum];\
 	for(int si=0;si<sboxNum;si++){\
 		memset(Pid,0,sboxNum);\
 		memset(Pod,0,sboxNum);\
 		for(int ii=0;ii<inNum;ii++){\
 			Pid[si]=ii;\
 			P(Pod,Pid);\
-			iP(Pod,Pid);\
-			memcpy(PTable[si][ii],Pod,sboxNum);\
-			memcpy(IPTable[si][ii],Pod,sboxNum);\
+			memcpy(PTable[si][ii],Pod,sizeof(uType)*sboxNum);\
 		}\
 	}\
 }
@@ -249,22 +244,31 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 
 #define FPRINTCURRENTTRAIL()\
 {\
-	fprintf(fpTrails,"%d:\n",trailCount[round-1]);\
+	fprintf(fpTrails,"%d:\n",trailCount[round]);\
+	for(int r=0;r<round;r++){\
+		for(int si=0;si<sboxNum;si++){\
+			fprintf(fpTrails,"%01x,",roundCharacteristic[r][si]);\
+		}fprintf(fpTrails,"\t");\
+		fprintf(fpTrails,"%d",roundProb[r+1]-roundProb[r]);\
+		fprintf(fpTrails,"\n");\
+	}\
 	for(int si=0;si<sboxNum;si++){\
-		fprintf(fpTrails,"%01x ",roundCharacteristic1[si]);\
+		fprintf(fpTrails,"%01x,",roundCharacteristic[round][si]);\
 	}fprintf(fpTrails,"\t");\
-	fprintf(fpTrails,"%d",roundProb[0]);\
+	fprintf(fpTrails,"total:%d",roundProb[round]);\
 	fprintf(fpTrails,"\n");\
-	for(int r=1;r<round;r++){\
+}
+
+#define FPRINTCLUSTER()\
+{\
+	for(int r=0;r<round;r++){\
 		for(int si=0;si<sboxNum;si++){\
 			fprintf(fpTrails,"%01x ",roundCharacteristic[r][si]);\
-		}fprintf(fpTrails,"\t");\
-		fprintf(fpTrails,"%d",roundProb[r]-roundProb[r-1]);\
+		}\
 		fprintf(fpTrails,"\n");\
 	}\
 	for(int si=0;si<sboxNum;si++){\
 		fprintf(fpTrails,"%01x ",roundCharacteristic[round][si]);\
-	}fprintf(fpTrails,"\t");\
-	fprintf(fpTrails,"total:%d",roundProb[round-1]);\
+	}\
 	fprintf(fpTrails,"\n");\
 }

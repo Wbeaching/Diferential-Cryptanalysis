@@ -137,11 +137,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="cipher_DES.h" />
     <ClInclude Include="cipher_PRESENT.h" />
     <ClInclude Include="generalFuncs.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cipher_DES.cpp" />
     <ClCompile Include="generalFuncs.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="cipher_PRESENT.cpp" />
