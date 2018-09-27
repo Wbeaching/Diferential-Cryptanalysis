@@ -25,8 +25,8 @@ int characteristicXOR(characteristic cha1,characteristic cha2,int r){
 	return weight&1;
 }
 
-#define CIPHER_DES 0
-#define CIPHER_PRESENT 1
+#define CIPHER_DES 1
+#define CIPHER_PRESENT 0
 int main(){
 #if CIPHER_PRESENT
 	PRESENT present;

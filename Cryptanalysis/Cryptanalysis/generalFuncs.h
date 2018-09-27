@@ -55,6 +55,7 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 #define PRINTTABLE(table,inNum,outNum){\
 	printf("·Ö²¼±í\n");\
 	for(int i=0;i<inNum;i++){\
+		printf("%02x: ",i);\
 		for(int j=0;j<outNum;j++){\
 			printf("%d ",table[i][j]);\
 		}printf("\n");\
@@ -76,8 +77,8 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 {\
 	ALIGNED_TYPE_(uType,Num) Pid[sboxNum],Pod[sboxNum];\
 	for(int si=0;si<sboxNum;si++){\
-		memset(Pid,0,sboxNum);\
-		memset(Pod,0,sboxNum);\
+		memset(Pid,0,sizeof(uType)*sboxNum);\
+		memset(Pod,0,sizeof(uType)*sboxNum);\
 		for(int ii=0;ii<inNum;ii++){\
 			Pid[si]=ii;\
 			P(Pod,Pid);\
@@ -226,11 +227,11 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 	fclose(fp);\
 }
 
-#define FPRINTPTABLE(PTable)\
+#define FPRINTPTABLE(PTable,PInNum)\
 {\
 	fp=fopen("PTable.txt","w");\
 	for(int s=0;s<sboxNum;s++){\
-		for(int id=0;id<inNum;id++){\
+		for(int id=0;id<PInNum;id++){\
 			fprintf(fp,"/*0x%02x*/{",id);\
 			for(int i=0;i<sboxNum;i++){\
 				fprintf(fp,"0x%02x,",PTable[s][id][i]);\

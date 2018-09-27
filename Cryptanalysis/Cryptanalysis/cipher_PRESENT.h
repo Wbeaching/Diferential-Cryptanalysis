@@ -96,7 +96,8 @@ private:
 	prType Bnc[rounds+1];
 	
 	ALIGNED_TYPE_(u8,16) roundCharacteristic[rounds+1][sboxNum];//第一轮存第一轮的输出差分。
-	__m128i *dp[rounds+1];
+	//__m128i *dp[rounds+1];
+	//vector<__m128i *> dp;
 	ALIGNED_TYPE_(u8,16) roundCharacteristic1[sboxNum];
 	si8 roundActiveSboxNum[rounds+1];
 	si8 roundActiveSboxIndex[rounds+1][sboxNum];

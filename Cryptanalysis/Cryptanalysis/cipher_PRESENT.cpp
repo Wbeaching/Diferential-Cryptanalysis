@@ -42,7 +42,7 @@ PRESENT::PRESENT(){
 	GENMAXPROB(SLinearInputMaxProb,SLinear_0_Number,linearProbNum,inNum);
 	GENMAXPROB(ISLinearInputMaxProb,ISLinear_0_Number,linearProbNum,outNum);
 
-	FPRINTPTABLE(PTable);
+	FPRINTPTABLE(PTable,inNum);
 	FPRINTSTATISTICS(SDiff_Number,SDiff_0_Number,SDiff_0_Offset,SDiff_1_Number,SDiff_1_Offset,SDiff_1_Non0Num,SDiff_1_Non0Val,diffProbNum,diffProb,SDiffInputMaxProb,ISDiffInputMaxProb);
 
 	diffProb[0]=2;
@@ -81,7 +81,7 @@ void PRESENT::fprintSPTable(){
 }
 
 void PRESENT::fprintPermTable(){
-	FPRINTPTABLE(PTable);
+	FPRINTPTABLE(PTable,inNum);
 }
 
 void PRESENT::fprintCurrentTrail(){
