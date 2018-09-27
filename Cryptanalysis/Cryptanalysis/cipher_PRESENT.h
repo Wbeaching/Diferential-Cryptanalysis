@@ -23,9 +23,6 @@ private:
 	static const prType linearWmaxSbox=2;
 public:
 	PRESENT();
-	void fprintPermTable();
-	void fprintSPTable();
-	void fprintStatistics();
 	void searchForBestDiffTrails();
 	void searchForCluster(byte plaintext[sboxNum],byte ciphertext[sboxNum],prType b,int r);
 	prType Bn[rounds+1];

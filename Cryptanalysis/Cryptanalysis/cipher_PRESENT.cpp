@@ -42,20 +42,23 @@ PRESENT::PRESENT(){
 	GENMAXPROB(SLinearInputMaxProb,SLinear_0_Number,linearProbNum,inNum);
 	GENMAXPROB(ISLinearInputMaxProb,ISLinear_0_Number,linearProbNum,outNum);
 
-	FPRINTPTABLE(PTable,inNum);
-	FPRINTSTATISTICS(SDiff_Number,SDiff_0_Number,SDiff_0_Offset,SDiff_1_Number,SDiff_1_Offset,SDiff_1_Non0Num,SDiff_1_Non0Val,diffProbNum,diffProb,SDiffInputMaxProb,ISDiffInputMaxProb);
+	FPRINTPTABLE(PTable,inNum,"PRESENT_PTable");
+	FPRINTSTATISTICS(SDiff_Number,SDiff_0_Number,SDiff_0_Offset,SDiff_1_Number,SDiff_1_Offset,SDiff_1_Non0Num,SDiff_1_Non0Val,diffProbNum,diffProb,SDiffInputMaxProb,ISDiffInputMaxProb,"PRESENT_diff_statistics.txt");
+	FPRINTSTATISTICS(SLinear_Number,SLinear_0_Number,SLinear_0_Offset,SLinear_1_Number,SLinear_1_Offset,SLinear_1_Non0Num,SLinear_1_Non0Val,linearProbNum,linearProb,SLinearInputMaxProb,ISLinearInputMaxProb,"PRESENT_linear_statistics.txt");
 
 	diffProb[0]=2;
 	diffProb[1]=3;
 	linearProb[0]=1;
 	linearProb[1]=2;
 
-	GENSPTABLE(diffSPTable,SDiffTable,PTable,inNum,SDiff_0_Offset,SDiff_1_Offset,diffProbNum);
-	GENSPTABLE(diffISIPTable,ISDiffTable,IPTable,inNum,ISDiff_0_Offset,ISDiff_1_Offset,diffProbNum);
-	GENSPTABLE(linearSPTable,SLinearTable,PTable,inNum/2,SLinear_0_Offset,SLinear_1_Offset,linearProbNum);
-	GENSPTABLE(linearISIPTable,ISLinearTable,IPTable,inNum/2,SLinear_0_Offset,SLinear_1_Offset,linearProbNum);
-
-	FPRINTSPTABLE(diffSPTable,diffProbNum,SDiff_0_Offset);
+	for(int si=0;si<sboxNum;si++){
+		GENSPTABLE(diffSPTable,SDiffTable,PTable,inNum,byte,Wto,Wto,SDiff_0_Offset,SDiff_1_Offset,diffProbNum,si);
+		GENSPTABLE(diffISIPTable,ISDiffTable,IPTable,inNum,byte,Wto,Wto,ISDiff_0_Offset,ISDiff_1_Offset,diffProbNum,si);
+		GENSPTABLE(linearSPTable,SLinearTable,PTable,inNum/2,byte,Wto,Wto,SLinear_0_Offset,SLinear_1_Offset,linearProbNum,si);
+		GENSPTABLE(linearISIPTable,ISLinearTable,IPTable,inNum/2,byte,Wto,Wto,SLinear_0_Offset,SLinear_1_Offset,linearProbNum,si);
+		FPRINTSPTABLE(diffSPTable,diffProbNum,SDiff_0_Offset,si,("PRESENT_"+to_string((_ULonglong)(si)) +"_SPTable.txt").c_str());
+	}
+	
 	/*for(int i=0;i<round+1;i++){
 		dp[i]=(__m128i *)(roundCharacteristic[i]);
 	}
@@ -70,18 +73,6 @@ void PRESENT::P(byte *Pod,byte *Pid){
 
 void PRESENT::iP(byte *Pod,byte *Pid){
 	P_BITPERM(ipermTable,byte,blockBits,inBits,inBits);
-}
-
-void PRESENT::fprintStatistics(){
-	FPRINTSTATISTICS(SDiff_Number,SDiff_0_Number,SDiff_0_Offset,SDiff_1_Number,SDiff_1_Offset,SDiff_1_Non0Num,SDiff_1_Non0Val,diffProbNum,diffProb,SDiffInputMaxProb,ISDiffInputMaxProb);
-}
-
-void PRESENT::fprintSPTable(){
-	FPRINTSPTABLE(diffSPTable,diffProbNum,SDiff_0_Offset)
-}
-
-void PRESENT::fprintPermTable(){
-	FPRINTPTABLE(PTable,inNum);
 }
 
 void PRESENT::fprintCurrentTrail(){

@@ -91,7 +91,7 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 {\
 	diff_Number=0;\
 	memset(diff_1_Number,0,diffProbNum*sizeof(int));\
-	memset(diff_0_Number,0,diffProbNum*outNum*sizeof(int));\
+	memset(diff_0_Number,0,diffProbNum*inNum*sizeof(int));\
 	for(int i=0;i<inNum;i++){\
 		for(int o=0;o<outNum;o++){\
 			if(diffTable[i][o]!=0&&diffTable[i][o]!=full){\
@@ -117,7 +117,7 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 		diff_1_Non0Num[p]=0;\
 	}\
 	for(int p=0;p<diffProbNum;p++){\
-		for(int i=0;i<outNum;i++){\
+		for(int i=0;i<inNum;i++){\
 			if(diff_0_Number[i][p]!=0){\
 				diff_1_Non0Val[p][diff_1_Non0Num[p]]=i;\
 				diff_1_Non0Num[p]++;\
@@ -139,7 +139,7 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 	}\
 }
 
-#define GENSPTABLE(SPTable,SDiffTable,PTable,full,SDiff_0_Offset,SDiff_1_Offset,diffProbNum)\
+#define GENSPTABLE(SPTable,SDiffTable,PTable,full,uType,Wti,Wto,SDiff_0_Offset,SDiff_1_Offset,diffProbNum,si)\
 {\
 	int diff_1_Count[diffProbNum];\
 	int diff_0_Count[diffProbNum];\
@@ -148,23 +148,21 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 	}\
 	for(int i=0;i<inNum;i++){\
 		for(int p=0;p<diffProbNum;p++){\
-			diff_0_Count[p]=SDiff_0_Offset[Wto[i]][p][0];\
+			diff_0_Count[p]=SDiff_0_Offset[Wti[i]][p][0];\
 		}\
 		for(int o=0;o<outNum;o++){\
-			if(SDiffTable[Wto[i]][Wto[o]]!=0&&SDiffTable[Wto[i]][Wto[o]]!=full){\
-				for(int si=0;si<sboxNum;si++){\
-					memcpy(SPTable[si][Wto[i]][diff_0_Count[diffProbNum-SDiffTable[Wto[i]][Wto[o]]/2]],PTable[si][Wto[o]],sboxNum*sizeof(byte));\
-				}\
-				diff_1_Count[diffProbNum-SDiffTable[Wto[i]][Wto[o]]/2]++;\
-				diff_0_Count[diffProbNum-SDiffTable[Wto[i]][Wto[o]]/2]++;\
+			if(SDiffTable[Wti[i]][Wto[o]]!=0&&SDiffTable[Wti[i]][Wto[o]]!=full){\
+				memcpy(SPTable[si][Wti[i]][diff_0_Count[diffProbNum-SDiffTable[Wti[i]][Wto[o]]/2]],PTable[si][Wto[o]],sboxNum*sizeof(uType));\
+				diff_1_Count[diffProbNum-SDiffTable[Wti[i]][Wto[o]]/2]++;\
+				diff_0_Count[diffProbNum-SDiffTable[Wti[i]][Wto[o]]/2]++;\
 			}\
 		}\
 	}\
 }
 
-#define FPRINTSTATISTICS(SDiff_Number,SDiff_0_Number,SDiff_0_Offset,SDiff_1_Number,SDiff_1_Offset,SDiff_1_Non0Num,SDiff_1_Non0Val,diffProbNum,diffProb,SDiffInputMaxProb,ISDiffInputMaxProb)\
+#define FPRINTSTATISTICS(SDiff_Number,SDiff_0_Number,SDiff_0_Offset,SDiff_1_Number,SDiff_1_Offset,SDiff_1_Non0Num,SDiff_1_Non0Val,diffProbNum,diffProb,SDiffInputMaxProb,ISDiffInputMaxProb,file)\
 {\
-	fp=fopen("statistics.txt","w");\
+	fp=fopen(file,"w");\
 	fprintf(fp,"diff_0_Offset:\n");\
 	for(int i=0x0;i<inNum;i++){\
 		fprintf(fp,"*/0x%02x*/",i);\
@@ -188,7 +186,7 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 	}\
 	fprintf(fp,"diffProb:\n");\
 	for(int p=0;p<diffProbNum;p++){\
-		fprintf(fp,"%d\t",diffProb[p]);\
+		fprintf(fp,"%f\t",diffProb[p]);\
 	}\
 	fprintf(fp,"\n");\
 	fprintf(fp,"diffInputMaxProb:\n");\
@@ -204,32 +202,30 @@ extern ALIGNED_TYPE_(si8,16) W16v[256*256][16];
 	fclose(fp);\
 }
 
-#define FPRINTSPTABLE(diffSPTable,diffProbNum,SDiff_0_Offset)\
+#define FPRINTSPTABLE(diffSPTable,diffProbNum,SDiff_0_Offset,si,file)\
 {\
-	fp=fopen("SPTable.txt","w");\
-	for(int si=0;si<sboxNum;si++){\
-		fprintf(fp,"以下是第%d个S盒的SP表\n",si);\
-		for(int i=0x0;i<outNum;i++){\
-			fprintf(fp,"*/0x%02x*/\t",i);\
-			for(int p=0x0;p<diffProbNum;p++){\
-				fprintf(fp,"%d:\t",p);\
-				for(int k=SDiff_0_Offset[i][p][0];k<SDiff_0_Offset[i][p][1];k++){\
-					fprintf(fp,"(");\
-					for(int l=0;l<16;l++){\
-						fprintf(fp,"%02x,",diffSPTable[si][i][k][l]);\
-					}\
-					fprintf(fp,")\t");\
+	fp=fopen(file,"w");\
+	fprintf(fp,"以下是第%d个S盒的SP表\n",si);\
+	for(int i=0x0;i<inNum;i++){\
+		fprintf(fp,"*/0x%02x*/\t",i);\
+		for(int p=0x0;p<diffProbNum;p++){\
+			fprintf(fp,"%d:\t",p);\
+			for(int k=SDiff_0_Offset[i][p][0];k<SDiff_0_Offset[i][p][1];k++){\
+				fprintf(fp,"(");\
+				for(int l=0;l<16;l++){\
+					fprintf(fp,"%02x,",diffSPTable[si][i][k][l]);\
 				}\
+				fprintf(fp,")\t");\
 			}\
-			fprintf(fp,"\n");\
 		}\
+		fprintf(fp,"\n");\
 	}\
 	fclose(fp);\
 }
 
-#define FPRINTPTABLE(PTable,PInNum)\
+#define FPRINTPTABLE(PTable,PInNum,file)\
 {\
-	fp=fopen("PTable.txt","w");\
+	fp=fopen(file,"w");\
 	for(int s=0;s<sboxNum;s++){\
 		for(int id=0;id<PInNum;id++){\
 			fprintf(fp,"/*0x%02x*/{",id);\
